@@ -2,3 +2,7 @@ markdown-it-py
 anthropic
 python-dotenv
 openai
+langchain
+langchain-community
+langchain_google_genai
+faiss-cpu

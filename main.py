@@ -5,6 +5,7 @@ import json
 from utils.manage_json import parse_response, load_json, make_json_readable, load_conversation, extract_messages, save_json, inspect_messages
 from utils.dialogue_to_html import view_dialogue_html
 from utils.request_ai_api import get_completion
+from utils.similarity_search import similarity_search, load_text_file, split_documents, embed_documents, create_text_file
 
 def handle_chat_session(content=None, system="You are a software developer.", messages=None, chat_title=None, model='grok-beta'):
     """Handle a chat session with the AI model.
@@ -52,18 +53,33 @@ def main(args):
         content = """
 
         """
-        chat_title = "use_whisper"
+        chat_title = ""
         
         messages = load_json(f'{chat_title}.json', 'current/2024_12_13')
         handle_chat_session(content=content.strip(), messages=messages)
 
     if args.first_message:
         content = """
-        
+
         """
-        system = "You are a software developer."
-        chat_title = "use_whisper"
-        handle_chat_session(content=content.strip(), system=system, chat_title=chat_title) # enter chat title
+        system = "You are a senior software developer."
+        chat_title = ""  # enter chat title
+        handle_chat_session(content=content.strip(), system=system, chat_title=chat_title)
+
+    if args.similarity_search:
+        folder = 'current'
+        file_name = 'claude-chat-problem.txt'
+        file_path = f"{folder}/{file_name}"
+
+        documents = load_text_file(file_path)
+        splits = split_documents(documents)
+        vectorstore = embed_documents(splits)
+
+        query = "What context preservation already works well in your system?"
+        similar_docs = similarity_search(vectorstore, query)
+
+        file_path = f"{folder}/retrieved_result.txt"
+        create_text_file(similar_docs, file_path)
 
     # if args.make_json_readable:
     #     file = 'dec6_2pm.json'
@@ -94,6 +110,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='AI Chat Interface')
     parser.add_argument('--continue_chat', action='store_true')
     parser.add_argument('--first_message', action='store_true')
+    parser.add_argument('--similarity_search', action='store_true')
     # parser.add_argument('--util', action='store_true')
     # parser.add_argument('--html', action='store_true')
     # parser.add_argument('--inspect_messages', action='store_true')
