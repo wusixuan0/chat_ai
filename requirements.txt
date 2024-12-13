@@ -1,0 +1,4 @@
+markdown-it-py
+anthropic
+python-dotenv
+openai
