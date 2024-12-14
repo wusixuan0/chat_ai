@@ -5,7 +5,7 @@ import json
 from utils.manage_json import parse_response, load_json, make_json_readable, load_conversation, extract_messages, save_json, inspect_messages
 from utils.dialogue_to_html import view_dialogue_html
 from utils.request_ai_api import get_completion
-from utils.similarity_search import similarity_search, load_text_file, split_documents, embed_documents, create_text_file
+from utils.similarity_search import similarity_search, load_text_file, split_documents, embed_documents, create_text_file, generate_context_prompt, docs_to_text
 
 def handle_chat_session(content=None, system="You are a software developer.", messages=None, chat_title=None, model='grok-beta'):
     """Handle a chat session with the AI model.
@@ -17,6 +17,7 @@ def handle_chat_session(content=None, system="You are a software developer.", me
         chat_title (str): Title for the chat session
         model (str): AI model to use
     """
+    content = content.strip()
     if not content:
         print("No prompt provided")
         return
@@ -29,7 +30,7 @@ def handle_chat_session(content=None, system="You are a software developer.", me
     
     # Generate chat title if not provided
     if not chat_title:
-        timestamp = datetime.datetime.now().strftime("%m_%d_%Hh")
+        timestamp = datetime.datetime.now().strftime("%m_%d_%Hh%Mm%Ss")
         chat_title = timestamp
 
     try:
@@ -56,15 +57,15 @@ def main(args):
         chat_title = ""
         
         messages = load_json(f'{chat_title}.json', 'current/2024_12_13')
-        handle_chat_session(content=content.strip(), messages=messages)
+        handle_chat_session(content=content, messages=messages)
 
     if args.first_message:
         content = """
 
         """
         system = "You are a senior software developer."
-        chat_title = ""  # enter chat title
-        handle_chat_session(content=content.strip(), system=system, chat_title=chat_title)
+        chat_title = "context_generator"  # enter chat title
+        handle_chat_session(content=content, system=system, chat_title=chat_title)
 
     if args.similarity_search:
         folder = 'current'
@@ -73,6 +74,16 @@ def main(args):
 
         documents = load_text_file(file_path)
         splits = split_documents(documents)
+
+        # for pos in range(len(splits)-3):
+        #     previous_context = docs_to_text(splits[pos-3:pos])
+        #     current_chunk = docs_to_text([splits[133]])
+        #     next_context = docs_to_text(splits[pos+1:pos+3])
+
+        #     system = "You are generate context for a chunk within a conversation for the purposes of improving search retrieval of the chunk."
+        #     context_generation_prompt = generate_context_prompt(previous_context, current_chunk, next_context)
+        #     handle_chat_session(content=context_generation_prompt, system=system, chat_title=pos)
+
         vectorstore = embed_documents(splits)
 
         query = "What context preservation already works well in your system?"

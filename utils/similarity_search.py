@@ -10,7 +10,7 @@ def load_text_file(file_path):
     loader = TextLoader(file_path, encoding='utf-8')
     return loader.load()
 
-def split_documents(documents, chunk_size=1000, chunk_overlap=200):
+def split_documents(documents, chunk_size=1000, chunk_overlap=0):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     return text_splitter.split_documents(documents)
 
@@ -23,8 +23,11 @@ def similarity_search(vectorstore, query, k=3):
     similar_docs = vectorstore.similarity_search(query, k=k)
     return similar_docs
 
+def docs_to_text(similar_docs):
+    return  "\n".join([doc.page_content for doc in similar_docs])
+
 def create_text_file(similar_docs, file_path):
-    similar_text = "\n".join([doc.page_content for doc in similar_docs])
+    similar_text = docs_to_text(similar_docs)
     with open(file_path, 'w') as f:
         f.write(similar_text)
 
@@ -38,3 +41,27 @@ def read_result(similar_docs, file_path):
 
     with open(file_path, 'w') as f:
         f.write(similar_text)
+
+def generate_context_prompt(previous_context, current_chunk, next_context):
+    return f"""
+Here is a section of a chat conversation:
+<previous_context>
+{ previous_context }
+</previous_context>
+
+<current_chunk>
+{ current_chunk }
+</current_chunk>
+
+<next_context>
+{ next_context }
+</next_context>
+
+Generate a brief (50-100 tokens) context description that:
+1. States the main topic being discussed
+2. Indicates the conversation stage (starting/continuing/concluding)
+3. Lists 1-2 key points from this part of the discussion
+
+Format: "This chunk discusses [topic]. The conversation is [stage] about [specific aspect]. Key points: [brief points]."
+Answer only with the context description, nothing else.
+"""

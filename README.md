@@ -13,4 +13,5 @@ python main.py --continue_chat
 
 ```
 python main.py --similarity_search
+import pdb; pdb.set_trace()
 ```
